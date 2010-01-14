@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 7;
+use Test::More tests => 8;
 use Encode qw(encode);
 
 use charnames qw(:full);
@@ -36,11 +36,24 @@ $res = learn_recoding(
         encodings   => ['UTF-8', 'Latin-1', 'Latin-7'],
 );
 
-#is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-1', 'decode', 'UTF-8'], 
+#is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-1', 'decode', 'UTF-8'],
 #          'Can detect double encoding via Latin-1';
+
+
 is repair_encoding("small ae: \xc3\x83\xc2\xa4", $res),
     "small ae: \N{LATIN SMALL LETTER A WITH DIAERESIS}",
     'Can repair double encoding via Latin-1 with autodetection';
+
+TODO: {
+    $res = learn_recoding(
+            from        => encode('UTF-8', $str),
+            to          => $str,
+            encodings   => ['UTF-8', 'UTF-8'],
+            search      => 'shallow',
+    );
+    cmp_ok scalar(@$res), '>=', 2,
+        'Found at least two ways to decode UTF-8 when UTF-8 is provided twice';
+};
 
 $res = learn_recoding(
         from        => "beta: \xc4\xaa\xc2\xb2",
@@ -53,3 +66,5 @@ is_deeply $res, ['decode', 'UTF-8', 'encode', 'Latin-7', 'decode', 'UTF-8'],
 is repair_encoding("beta: \xc4\xaa\xc2\xb2", $res),
    "beta: \N{GREEK SMALL LETTER BETA}",
     'Can repair double encoding via Latin-7 with autodetection';
+
+# vim: ts=4 sw=4 expandtab tw=80
